@@ -1,0 +1,5 @@
+{
+  "name": "DriveRename AI",
+  "description": "A Google Workspace Developer tool for generating AI-powered file renaming logic and Apps Script code.",
+  "requestFramePermissions": []
+}
