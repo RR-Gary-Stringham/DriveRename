@@ -49,6 +49,7 @@ export async function getRenameSuggestions(
   `;
 
   try {
+    console.log("Calling Gemini with prompt:", prompt);
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
       contents: prompt,
@@ -57,12 +58,16 @@ export async function getRenameSuggestions(
       },
     });
 
+    console.log("Gemini raw response:", response);
+
     // Handle function calls
     const functionCalls = response.functionCalls;
     if (functionCalls && functionCalls.length > 0) {
+      console.log("Function calls detected:", functionCalls);
       const call = functionCalls[0];
       if (call.name === "proposeFileRenames") {
         const args = call.args as any;
+        console.log("Function call args:", args);
         return args.fileList.map((f: RenameSuggestion) => ({
           id: f.fileId,
           originalName: f.currentName,
@@ -70,11 +75,13 @@ export async function getRenameSuggestions(
           reasoning: f.reasoning
         }));
       }
+    } else {
+      console.warn("No function calls in Gemini response. Text output:", response.text);
     }
 
     return [];
   } catch (error) {
-    console.error("Error getting suggestions:", error);
+    console.error("Error in getRenameSuggestions:", error);
     throw error;
   }
 }

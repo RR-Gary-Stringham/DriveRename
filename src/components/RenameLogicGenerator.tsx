@@ -28,6 +28,7 @@ import { AppsScriptResponse, DriveFile, RenameResponse } from "@/src/lib/drive-s
 
 export default function RenameLogicGenerator() {
   const [fileInput, setFileInput] = useState("");
+  const [selectedFiles, setSelectedFiles] = useState<DriveFile[]>([]);
   const [intent, setIntent] = useState("Organize by date and project name");
   const [suggestions, setSuggestions] = useState<FileSuggestion[]>([]);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -122,10 +123,7 @@ export default function RenameLogicGenerator() {
           .withSuccessHandler((response: AppsScriptResponse) => {
             setFetching(false);
             if (response.success && response.files) {
-              const formattedFiles = response.files
-                .map(f => `${f.currentName}|${f.fileId}`)
-                .join("\n");
-              setFileInput(formattedFiles);
+              setSelectedFiles(response.files);
               toast.success(`Fetched ${response.files.length} files from Drive`);
             } else {
               console.error("Backend Error Logic (getSelectedFiles):", response.error);
@@ -149,32 +147,52 @@ export default function RenameLogicGenerator() {
   };
 
   const handleAnalyze = async () => {
-    if (!fileInput.trim()) {
-      toast.error("Please provide some file names.");
+    if (selectedFiles.length === 0 && !fileInput.trim()) {
+      toast.error("Please provide some file names or fetch selected files.");
       return;
     }
 
     setLoading(true);
+    console.log("Starting analysis with intent:", intent);
     try {
-      // Parse input: assume one file per line or comma-separated
-      const lines = fileInput.split(/\n|,/).filter((l) => l.trim());
-      const files = lines.map((line, index) => {
-        const parts = line.split("|");
-        return {
-          id: parts[1]?.trim() || `id-${index}`,
-          name: parts[0]?.trim() || line.trim(),
-        };
-      });
+      let files: { id: string; name: string }[] = [];
 
+      if (selectedFiles.length > 0) {
+        files = selectedFiles.map(f => ({ id: f.fileId, name: f.currentName }));
+      } else {
+        // Parse manual input: assume one file per line or comma-separated
+        const lines = fileInput.split(/\n|,/).filter((l) => l.trim());
+        files = lines.map((line, index) => {
+          const parts = line.split("|");
+          return {
+            id: parts[1]?.trim() || `id-${index}`,
+            name: parts[0]?.trim() || line.trim(),
+          };
+        });
+      }
+
+      console.log("Parsed files for analysis:", files);
       const result = await getRenameSuggestions(files, intent);
+      console.log("Analysis result:", result);
+      
       setSuggestions(result);
       setSelectedIds(new Set(result.map((s) => s.id)));
-      toast.success("Suggestions generated!");
+      
+      if (result.length > 0) {
+        toast.success("Suggestions generated!");
+      } else {
+        toast.warning("Gemini returned no suggestions. Try a different intent.");
+      }
     } catch (error) {
-      toast.error("Failed to generate suggestions.");
+      console.error("Analyze error details:", error);
+      toast.error("Failed to generate suggestions. Check console for details.");
     } finally {
       setLoading(false);
     }
+  };
+
+  const removeFile = (id: string) => {
+    setSelectedFiles(prev => prev.filter(f => f.fileId !== id));
   };
 
   const toggleSelect = (id: string) => {
@@ -329,27 +347,58 @@ function executeRename(event) {
               <CardDescription className="font-serif italic text-xs">Enter file names (one per line or name|id)</CardDescription>
             </CardHeader>
             <CardContent className="pt-6 space-y-4">
-              <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <label className="text-[10px] uppercase font-mono opacity-50">File List</label>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    onClick={fetchFiles}
-                    disabled={fetching}
-                    className="h-6 text-[10px] uppercase font-mono border border-[#141414]/20 rounded-none hover:bg-[#141414] hover:text-[#E4E3E0]"
-                  >
-                    {fetching ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <RefreshCw className="h-3 w-3 mr-1" />}
-                    Fetch Selected
-                  </Button>
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <label className="text-[10px] uppercase font-mono opacity-50">File List</label>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={fetchFiles}
+                      disabled={fetching}
+                      className="h-6 text-[10px] uppercase font-mono border border-[#141414]/20 rounded-none hover:bg-[#141414] hover:text-[#E4E3E0]"
+                    >
+                      {fetching ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <RefreshCw className="h-3 w-3 mr-1" />}
+                      Fetch Selected
+                    </Button>
+                  </div>
+                  
+                  {selectedFiles.length > 0 ? (
+                    <div className="space-y-2">
+                      <ScrollArea className="h-[200px] border border-[#141414] bg-white/50 p-2 rounded-none">
+                        <div className="space-y-1">
+                          {selectedFiles.map((f) => (
+                            <div key={f.fileId} className="flex justify-between items-center p-1.5 border-b border-[#141414]/5 text-[11px] font-mono group hover:bg-[#141414]/5">
+                              <span className="truncate mr-2">{f.currentName}</span>
+                              <button 
+                                onClick={() => removeFile(f.fileId)}
+                                className="opacity-0 group-hover:opacity-100 text-[#141414]/40 hover:text-red-600 transition-opacity px-1"
+                              >
+                                ×
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      </ScrollArea>
+                      <div className="flex justify-end">
+                        <Button 
+                          variant="link" 
+                          size="sm" 
+                          onClick={() => setSelectedFiles([])}
+                          className="text-[9px] uppercase font-mono h-auto p-0 opacity-50 hover:opacity-100"
+                        >
+                          Clear Selection
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <Textarea
+                      placeholder="Invoice_2023.pdf&#10;Report_Final_v2.docx|id-123&#10;IMG_001.jpg"
+                      className="min-h-[200px] rounded-none border-[#141414] focus-visible:ring-0 bg-white/50"
+                      value={fileInput}
+                      onChange={(e) => setFileInput(e.target.value)}
+                    />
+                  )}
                 </div>
-                <Textarea
-                  placeholder="Invoice_2023.pdf&#10;Report_Final_v2.docx|id-123&#10;IMG_001.jpg"
-                  className="min-h-[200px] rounded-none border-[#141414] focus-visible:ring-0 bg-white/50"
-                  value={fileInput}
-                  onChange={(e) => setFileInput(e.target.value)}
-                />
-              </div>
               <div className="space-y-2">
                 <label className="text-[10px] uppercase font-mono opacity-50">Renaming Intent</label>
                 <Input
