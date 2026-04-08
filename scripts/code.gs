@@ -127,64 +127,123 @@ function showSidebar() {
 }
 
 
+
+
+
+async function getSelectedFiles() {
+  const storedSelection = PropertiesService.getUserProperties().getProperty('LATEST_SELECTION');
+
+  if (!storedSelection) {
+    return {
+      success: false,
+      error: "No files selected."
+    };
+  }
+
+  const fileIds = JSON.parse(storedSelection);
+  const fileData = [];
+
+  for (const id of fileIds) {
+    const file = DriveApp.getFileById(id);
+    const mimeType = file.getMimeType();
+    let content = "";
+
+    if (mimeType === "application/pdf") {
+      const extractedText = await extractPdfTextSmart(id);
+
+      if (typeof extractedText === "string" && extractedText.length > 0) {
+        content = extractedText.substring(0, 2000);
+        if (extractedText.length > 2000) {
+          content += "... [truncated]";
+        }
+      } else {
+        content = "[No text extracted]";
+      }
+    }
+
+    fileData.push({
+      fileId: id,
+      currentName: file.getName(),
+      mimeType,
+      content
+    });
+  }
+
+  return {
+    success: true,
+    files: fileData
+  };
+}
+
+
+
 /**
  * Retrieves metadata and content for the files. Called from React via google.script.run.
  * No parameters needed — it reads from UserProperties.
  */
-function getSelectedFiles() {
+/**
+ * Retrieves metadata and content for the selected files.
+ * Called from React via google.script.run.
+ * Reads file IDs from UserProperties under LATEST_SELECTION.
+ *
+ * @returns {Promise<{success: boolean, files?: Array<Object>, error?: string}>}
+ */
+async function getSelectedFiles() {
   try {
-    const storedSelection = PropertiesService.getUserProperties().getProperty('LATEST_SELECTION');
-    
+    const storedSelection =
+      PropertiesService.getUserProperties().getProperty("LATEST_SELECTION");
+
     if (!storedSelection) {
-      return { 
-        success: false, 
-        error: "No files selected. Please select one or more files in Google Drive, then open the assistant." 
+      return {
+        success: false,
+        error:
+          "No files selected. Please select one or more files in Google Drive, then open the assistant."
       };
     }
 
     const fileIds = JSON.parse(storedSelection);
-    
-    // Convert the IDs back into file metadata using DriveApp
-    const fileData = fileIds.map(function(id) {
+    const fileData = [];
+
+    for (const id of fileIds) {
       const file = DriveApp.getFileById(id);
       const mimeType = file.getMimeType();
       let content = "";
 
       if (mimeType === "application/pdf") {
         try {
-          // Extract text from PDF
-          const extractedText = extractPdfTextSmart(id);
-          if (extractedText) {
-            // Limit to 2000 characters to keep prompt size reasonable
+          const extractedText = await extractPdfTextSmart(id);
+
+          if (typeof extractedText === "string" && extractedText.length > 0) {
             content = extractedText.substring(0, 2000);
             if (extractedText.length > 2000) {
               content += "... [truncated]";
             }
+          } else {
+            content = "[No text extracted]";
           }
         } catch (e) {
-          console.error("Failed to extract text for " + id + ": " + e.toString());
+          Logger.log("Failed to extract text for " + id + ": " + e);
           content = "[Error extracting text]";
         }
       }
 
-      return {
+      fileData.push({
         fileId: id,
         currentName: file.getName(),
         mimeType: mimeType,
         content: content
-      };
-    });
+      });
+    }
 
-    return { 
-      success: true, 
-      files: fileData 
+    return {
+      success: true,
+      files: fileData
     };
-
   } catch (err) {
-    console.error("Error in getSelectedFiles: " + err.toString());
-    return { 
-      success: false, 
-      error: "An internal error occurred: " + err.message 
+    Logger.log("Error in getSelectedFiles: " + err);
+    return {
+      success: false,
+      error: "An internal error occurred: " + err.message
     };
   }
 }
@@ -238,31 +297,29 @@ function include(filename) {
 
 /**
  * Extracts text from a PDF in Google Drive.
- * Attempts fast extraction using PDF.gs (PdfApp). If no meaningful text is returned,
- * falls back to Google Drive OCR by converting the PDF into a Google Doc.
+ * Tries PdfApp first for native PDF text extraction, then falls back to OCR.
  *
- * @function extractPdfTextSmart
  * @param {string} fileId - Google Drive file ID.
  * @param {number} [minTextLength=50] - Minimum length of text to consider extraction successful.
- * @returns {string} Extracted text, or an empty string if both methods fail.
+ * @returns {Promise<string>} Extracted text, or an empty string if both methods fail.
  *
  * @throws {Error} Throws if both PDF.gs and OCR extraction fail unexpectedly.
  */
-function extractPdfTextSmart(fileId, minTextLength = 50) {
+ */
+async function extractPdfTextSmart(fileId, minTextLength = 50) {
   const file = DriveApp.getFileById(fileId);
   const blob = file.getBlob();
-  
-  // Normalize minTextLength to ensure it is a positive number
   const threshold = Math.max(0, Number(minTextLength) || 50);
 
   try {
-    // Check for PdfApp library
     if (typeof PdfApp !== "undefined" && typeof PdfApp.extractText === "function") {
-      const result = PdfApp.extractText(blob);
+      const binary = Uint8Array.from(blob.getBytes());
+      const result = await PdfApp.extractText(binary);
 
       if (typeof result === "string") {
         const cleaned = result.trim();
         if (cleaned.length > threshold) {
+          Logger.log("Used PdfApp extraction for file: " + fileId);
           return cleaned;
         }
       }
@@ -275,7 +332,6 @@ function extractPdfTextSmart(fileId, minTextLength = 50) {
     Logger.log("PdfApp extraction failed for " + fileId + ": " + err);
   }
 
-  // Fallback to OCR
   Logger.log("Falling back to OCR extraction for file: " + fileId);
   return extractWithOCR(blob);
 }
@@ -297,28 +353,28 @@ function extractWithOCR(blob) {
   let tempFileId = null;
 
   try {
-    // metadata for the new file
-    const fileMetadata = {
+    const resource = {
       name: "temp_ocr_" + Date.now(),
       mimeType: "application/vnd.google-apps.document"
     };
 
-    // Advanced Drive Service v3 signature: .create(metadata, media, optionalArgs)
-    const file = Drive.Files.create(fileMetadata, blob);
+    const file = Drive.Files.create(resource, blob, {
+      ocrLanguage: "en"
+    });
+
     tempFileId = file.id;
 
     const doc = DocumentApp.openById(tempFileId);
-    const text = doc.getBody().getText();
-    return text;
+    return doc.getBody().getText() || "";
   } catch (e) {
-    console.error("OCR process failed: " + e.toString());
+    Logger.log("OCR failed: " + e);
     return "";
   } finally {
     if (tempFileId) {
       try {
         DriveApp.getFileById(tempFileId).setTrashed(true);
       } catch (cleanupErr) {
-        console.error("Cleanup failed for " + tempFileId);
+        Logger.log("Cleanup failed: " + cleanupErr);
       }
     }
   }
