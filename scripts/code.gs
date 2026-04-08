@@ -131,7 +131,7 @@ function showSidebar() {
  * Retrieves metadata and content for the files. Called from React via google.script.run.
  * No parameters needed — it reads from UserProperties.
  */
-async function getSelectedFiles() {
+function getSelectedFiles() {
   try {
     const storedSelection = PropertiesService.getUserProperties().getProperty('LATEST_SELECTION');
     
@@ -145,7 +145,7 @@ async function getSelectedFiles() {
     const fileIds = JSON.parse(storedSelection);
     
     // Convert the IDs back into file metadata using DriveApp
-    const fileDataPromises = fileIds.map(async function(id) {
+    const fileData = fileIds.map(function(id) {
       const file = DriveApp.getFileById(id);
       const mimeType = file.getMimeType();
       let content = "";
@@ -153,7 +153,7 @@ async function getSelectedFiles() {
       if (mimeType === "application/pdf") {
         try {
           // Extract text from PDF
-          const extractedText = await extractPdfTextSmart(id);
+          const extractedText = extractPdfTextSmart(id);
           if (extractedText) {
             // Limit to 2000 characters to keep prompt size reasonable
             content = extractedText.substring(0, 2000);
@@ -174,8 +174,6 @@ async function getSelectedFiles() {
         content: content
       };
     });
-
-    const fileData = await Promise.all(fileDataPromises);
 
     return { 
       success: true, 

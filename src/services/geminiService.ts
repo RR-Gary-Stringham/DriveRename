@@ -73,9 +73,9 @@ export async function getRenameSuggestions(
     For files where content is provided, use that information (like dates, invoice numbers, or project names found inside the document) to make more accurate suggestions.
     
     Files:
-    ${files.map((f) => `- ID: ${f.id}, Name: ${f.name}${f.content ? `\n  Content Snippet: ${f.content}` : ""}`).join("\n")}
+    ${files.map((f) => `- ID: ${f.id}\n  Current Name: ${f.name}${f.content ? `\n  Extracted Content: ${f.content}` : "\n  Extracted Content: [No content available for this file]"}`).join("\n")}
     
-    Use the 'proposeFileRenames' tool to provide your suggestions.
+    CRITICAL: For PDF files, look specifically for dates (e.g., "Date: 10/25/2023"), invoice numbers, or vendor names within the "Extracted Content" section to fulfill the user's intent.
   `;
 
   try {
