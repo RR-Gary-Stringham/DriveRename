@@ -1,0 +1,32 @@
+{
+  "name": "proposeFileRenames",
+  "description": "Analyzes a list of Google Drive files and returns a structured list of suggested new names along with the necessary Apps Script CardService UI code for user approval.",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "fileList": {
+        "type": "array",
+        "description": "The list of files currently selected or found in the folder.",
+        "items": {
+          "type": "object",
+          "properties": {
+            "fileId": {
+              "type": "string",
+              "description": "The unique Google Drive ID of the file."
+            },
+            "currentName": {
+              "type": "string",
+              "description": "The current filename including extension."
+            }
+          },
+          "required": ["fileId", "currentName"]
+        }
+      },
+      "namingConvention": {
+        "type": "string",
+        "description": "Optional user preference for naming (e.g., 'Professional', 'ISO Date format', 'Short')."
+      }
+    },
+    "required": ["fileList"]
+  }
+}

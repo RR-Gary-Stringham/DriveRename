@@ -32,6 +32,7 @@
     "vite": "^6.2.0"
   },
   "devDependencies": {
+    "@google/clasp": "^3.3.0",
     "@types/express": "^4.17.21",
     "@types/node": "^22.14.0",
     "autoprefixer": "^10.4.21",

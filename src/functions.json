@@ -1,0 +1,20 @@
+{
+  "name": "suggestRenames",
+  "description": "Takes a list of file names and IDs and returns suggested names and UI code.",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "files": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "fileId": { "type": "string" },
+            "currentName": { "type": "string" }
+          }
+        }
+      }
+    },
+    "required": ["files"]
+  }
+}
