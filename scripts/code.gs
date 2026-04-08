@@ -4,11 +4,11 @@
  */
 
 function onHomepage(e) {
-  return createRenameCard();
+  return createRenameCard(e);
 }
 
 function onItemsSelected(e) {
-  return createRenameCard(e.drive.activeCursorItem);
+  return createRenameCard(e);
 }
 
 /**
@@ -52,19 +52,28 @@ function onOpen(e) {
 
 
 /**
- * CardService UI for Drive context.
+ * Creates the main card for the Drive Add-on.
+ * Uses the Web App URL to open the React app in an overlay.
+ * @param {Object} [e] The event object.
  * @returns {GoogleAppsScript.Card_Service.Card}
  */
-function buildMainCard() {
+function createRenameCard(e) {
   const card = CardService.newCardBuilder();
-  card.setHeader(CardService.newCardHeader().setTitle('DriveRename AI'));
+  card.setHeader(CardService.newCardHeader().setTitle('DriveRenamer'));
 
   const section = CardService.newCardSection();
-  section.addWidget(CardService.newTextParagraph().setText('Launch the AI Assistant to organize your files.'));
+  
+  // Use ScriptApp to get the URL dynamically so you don't have to hardcode it
+  const webAppUrl = ScriptApp.getService().getUrl(); 
 
-  const action = CardService.newAction().setFunctionName('showSidebar');
-  section.addWidget(CardService.newTextButton().setText('Open Sidebar').setOnClickAction(action));
+  const button = CardService.newTextButton()
+    .setText('Open AI Assistant')
+    .setOpenLink(CardService.newOpenLink()
+      .setUrl(webAppUrl)
+      .setOpenAs(CardService.OpenAs.OVERLAY) // Opens as a modal popup
+      .setOnClose(CardService.OnClose.RELOAD_ADD_ON));
 
+  section.addWidget(button);
   card.addSection(section);
   return card.build();
 }
@@ -72,12 +81,12 @@ function buildMainCard() {
 
 
 /**
- * Shows the sidebar with the Vite-hosted React app.
+ * Shows the sidebar or overlay with the Vite-hosted React app.
  * This function is called when the user clicks the add-on icon.
  * @returns {void|GoogleAppsScript.Card_Service.ActionResponse}
  */
 function showSidebar() {
-  const html = HtmlService.createHtmlOutputFromFile('index')
+  const html = HtmlService.createHtmlOutputFromFile('dist/index')
     .setTitle('DriveRename AI')
     .setWidth(300)
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
@@ -90,7 +99,7 @@ function showSidebar() {
     // For Drive Add-ons, the UI is usually CardService based, 
     // but sidebar can be launched from a Card action.
     CardService.newActionResponseBuilder()
-      .setNavigation(CardService.newNavigation().pushCard(buildMainCard()))
+      .setNavigation(CardService.newNavigation().pushCard(createRenameCard()))
       .build();
   }
 }
@@ -173,8 +182,8 @@ function renameFile(fileId, newName) {
  */
 
 function doGet(e) {
-  return HtmlService.createHtmlOutputFromFile('index.html')
-    .setTitle('Gemini Drive Renamer')
+  return HtmlService.createHtmlOutputFromFile('dist/index')
+    .setTitle('DriveRenamer')
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 }
 

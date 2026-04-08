@@ -1,5 +1,7 @@
 {
   "timeZone": "America/New_York",
+  "exceptionLogging": "STACKDRIVER",
+  "runtimeVersion": "V8",
   "dependencies": {
     "enabledAdvancedServices": [
       {
@@ -9,17 +11,18 @@
       }
     ]
   },
-  "exceptionLogging": "STACKDRIVER",
-  "runtimeVersion": "V8",
-  "webapp": {
-    "executeAs": "USER_ACCESSING",
-    "access": "ANYONE"
-  },
-    "addOns": {
+  "urlFetchWhitelist": [
+    "https://generativelanguage.googleapis.com/"
+  ],
+  "addOns": {
     "common": {
-      "name": "Gemini Drive Renamer",
+      "name": "DriveRenamer",
       "logoUrl": "https://www.gstatic.com/images/branding/product/1x/drive_48dp.png",
       "useLocaleFromApp": true,
+      "openLinkUrlPrefixes": [
+        "https://script.google.com/macros/s/",
+        "https://script.google.com/"
+      ],
       "homepageTrigger": {
         "runFunction": "onHomepage",
         "enabled": true
@@ -33,7 +36,15 @@
   },
   "oauthScopes": [
     "https://www.googleapis.com/auth/drive.file",
-    "https://www.googleapis.com/auth/script.container.ui",
-    "https://www.googleapis.com/auth/userinfo.email"
-  ]
+    "https://www.googleapis.com/auth/userinfo.email",
+    "https://www.googleapis.com/auth/drive.addons.metadata.readonly",
+    "https://www.googleapis.com/auth/script.external_request",
+    "https://www.googleapis.com/auth/drive.readonly",
+    "https://www.googleapis.com/auth/script.locale",
+    "https://www.googleapis.com/auth/drive.addons.metadata.readonly"
+  ],
+  "webapp": {
+    "executeAs": "USER_ACCESSING",
+    "access": "ANYONE"
+  }
 }
