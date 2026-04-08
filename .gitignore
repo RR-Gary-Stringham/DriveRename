@@ -1,14 +1,26 @@
-node_modules/
-build/
-dist/
-coverage/
+# System Files
 .DS_Store
 *.log
-.env*
-!.env.example
 
+# pnpm specific
+node_modules
+pnpm-debug.log*
+pnpm-lock.yaml
 
 # Clasp / Google Apps Script
 .clasp.json
 .clasptmp.json
-~/.clasprc.json
+.clasprc.json
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# Build outputs
+build/
+dist/
+coverage/
+dist-ssr
+*.local
