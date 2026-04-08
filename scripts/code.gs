@@ -238,42 +238,50 @@ function include(filename) {
 }
 
 
-
 /**
- * Extracts text from a PDF stored in Google Drive.
- *
+ * Extracts text from a PDF in Google Drive.
  * Attempts fast extraction using PDF.gs (PdfApp). If no meaningful text is returned,
  * falls back to Google Drive OCR by converting the PDF into a Google Doc.
  *
- * @async
  * @function extractPdfTextSmart
- * @param {string} fileId - The Google Drive file ID of the PDF to process.
- * @returns {Promise<string>} The extracted text content from the PDF.
+ * @param {string} fileId - Google Drive file ID.
+ * @param {number} [minTextLength=50] - Minimum length of text to consider extraction successful.
+ * @returns {string} Extracted text, or an empty string if both methods fail.
  *
  * @throws {Error} Throws if both PDF.gs and OCR extraction fail unexpectedly.
  */
-async function extractPdfTextSmart(fileId) {
+function extractPdfTextSmart(fileId, minTextLength = 50) {
   const file = DriveApp.getFileById(fileId);
   const blob = file.getBlob();
-  let text = "";
+  
+  // Normalize minTextLength to ensure it is a positive number
+  const threshold = Math.max(0, Number(minTextLength) || 50);
 
   try {
-    // Attempt fast extraction using PDF.gs
-    text = await PdfApp.extractText(blob);
-    if (typeof text === "string" && text.trim().length > 20) {
-      Logger.log("Used PDF.gs (text-based PDF)");
-      return text;
-    }
+    // Check for PdfApp library
+    if (typeof PdfApp !== "undefined" && typeof PdfApp.extractText === "function") {
+      const result = PdfApp.extractText(blob);
 
-    Logger.log("PDF.gs returned little/no text");
+      if (typeof result === "string") {
+        const cleaned = result.trim();
+        if (cleaned.length > threshold) {
+          return cleaned;
+        }
+      }
+
+      Logger.log("PdfApp returned insufficient or non-string text for file: " + fileId);
+    } else {
+      Logger.log("PdfApp library is not loaded or missing extractText function.");
+    }
   } catch (err) {
-    Logger.log("PDF.gs failed: " + err);
+    Logger.log("PdfApp extraction failed for " + fileId + ": " + err);
   }
 
-  // --- FALLBACK: OCR ---
-  Logger.log("Falling back to OCR");
+  // Fallback to OCR
+  Logger.log("Falling back to OCR extraction for file: " + fileId);
   return extractWithOCR(blob);
 }
+
 
 /**
  * Extracts text from a PDF blob using Google Drive OCR.
@@ -288,20 +296,33 @@ async function extractPdfTextSmart(fileId) {
  * @throws {Error} Throws if OCR conversion or document access fails.
  */
 function extractWithOCR(blob) {
-  const resource = {
-    name: "temp_ocr_" + Date.now(),
-    mimeType: "application/vnd.google-apps.document"
-  };
+  let tempFileId = null;
 
-  const file = Drive.Files.create(resource, blob, {
-    ocrLanguage: "en"
-  });
+  try {
+    // metadata for the new file
+    const fileMetadata = {
+      name: "temp_ocr_" + Date.now(),
+      mimeType: "application/vnd.google-apps.document"
+    };
 
-  const doc = DocumentApp.openById(file.id);
-  const text = doc.getBody().getText();
+    // Advanced Drive Service v3 signature: .create(metadata, media, optionalArgs)
+    const file = Drive.Files.create(fileMetadata, blob);
+    tempFileId = file.id;
 
-  // Cleanup temporary file
-  DriveApp.getFileById(file.id).setTrashed(true);
-
-  return text;
+    const doc = DocumentApp.openById(tempFileId);
+    const text = doc.getBody().getText();
+    return text;
+  } catch (e) {
+    console.error("OCR process failed: " + e.toString());
+    return "";
+  } finally {
+    if (tempFileId) {
+      try {
+        DriveApp.getFileById(tempFileId).setTrashed(true);
+      } catch (cleanupErr) {
+        console.error("Cleanup failed for " + tempFileId);
+      }
+    }
+  }
 }
+
