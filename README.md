@@ -35,8 +35,8 @@ Create a .env file in the root directory to store your configuration or copy the
 Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
 
 <br>
+
 **Optional**
- 
 Set APP_URL="MY_APP_URL"
 
 The URL where this applet is hosted. AI Studio automatically injects this at runtime with the Cloud Run service URL.This setting is not normally needed unless you need to link back to your script (for a webhook or a callback), the "URL" would be the Web App URL of your Google Apps Script.
@@ -99,7 +99,8 @@ Google Apps Script requires all frontend code to be inlined. Use the custom buil
 1. **Build & Push:**  
    pnpm run deploy
 
-   *This command runs pnpm run build:gs (which executes vite build \--mode gscript) to consolidate assets into dist/index.html, then executes clasp push.*  
+   *This command runs pnpm run build:gs (which executes vite build \--mode gscript) to consolidate assets into dist/index.html, then executes clasp push.* 
+
 2. **Test the Add-on:**  
    * Open [script.google.com](https://script.google.com) and open your project.  
    * Click **Deploy** \> **Test deployments**.  
