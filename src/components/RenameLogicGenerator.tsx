@@ -24,7 +24,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
 import { Loader2, Play, Code, FileJson, Copy, Check, RefreshCw } from "lucide-react";
 import { getRenameSuggestions, FileSuggestion, initGemini } from "@/src/services/geminiService";
-import { AppsScriptResponse, DriveFile } from "@/src/lib/drive-service";
+import { AppsScriptResponse, DriveFile, RenameResponse } from "@/src/lib/drive-service";
 
 export default function RenameLogicGenerator() {
   const [fileInput, setFileInput] = useState("");
@@ -33,6 +33,7 @@ export default function RenameLogicGenerator() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(false);
+  const [renaming, setRenaming] = useState(false);
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
@@ -45,11 +46,71 @@ export default function RenameLogicGenerator() {
           if (key) {
             initGemini(key);
             console.log("Gemini initialized with Apps Script key");
+          } else {
+            console.warn("Backend Error Logic: No API key returned from Apps Script.");
           }
+        })
+        .withFailureHandler((err: Error) => {
+          console.error("Script Execution Crashed (getGeminiApiKey):", err);
         })
         .getGeminiApiKey();
     }
   }, []);
+
+  const handleExecuteRenaming = async () => {
+    const selectedSuggestions = suggestions.filter((s) => selectedIds.has(s.id));
+    if (selectedSuggestions.length === 0) {
+      toast.error("No suggestions selected for renaming.");
+      return;
+    }
+
+    // @ts-ignore
+    if (typeof google === 'undefined' || !google.script || !google.script.run) {
+      toast.info("Apps Script environment not detected. Renaming simulation only.");
+      console.log("Simulating rename for:", selectedSuggestions);
+      return;
+    }
+
+    setRenaming(true);
+    let successCount = 0;
+    let failCount = 0;
+
+    const renamePromises = selectedSuggestions.map((item) => {
+      return new Promise<void>((resolve) => {
+        // @ts-ignore
+        google.script.run
+          .withSuccessHandler((response: RenameResponse) => {
+            if (response.success) {
+              console.log(`Successfully renamed to ${response.newName}`);
+              successCount++;
+            } else {
+              console.error(`Backend Error Logic (renameFile): ${response.error}`);
+              failCount++;
+            }
+            resolve();
+          })
+          .withFailureHandler((err: Error) => {
+            console.error(`Script Execution Crashed (renameFile):`, err);
+            failCount++;
+            resolve();
+          })
+          .renameFile(item.id, item.proposedName);
+      });
+    });
+
+    await Promise.all(renamePromises);
+    setRenaming(false);
+
+    if (successCount > 0) {
+      toast.success(`Successfully renamed ${successCount} files.`);
+      // Refresh the list or remove renamed items
+      setSuggestions(prev => prev.filter(s => !selectedIds.has(s.id)));
+      setSelectedIds(new Set());
+    }
+    if (failCount > 0) {
+      toast.error(`Failed to rename ${failCount} files. Check console for details.`);
+    }
+  };
 
   const fetchFiles = () => {
     setFetching(true);
@@ -67,11 +128,13 @@ export default function RenameLogicGenerator() {
               setFileInput(formattedFiles);
               toast.success(`Fetched ${response.files.length} files from Drive`);
             } else {
+              console.error("Backend Error Logic (getSelectedFiles):", response.error);
               toast.error(response.error || "Failed to fetch files");
             }
           })
           .withFailureHandler((err: Error) => {
             setFetching(false);
+            console.error("Script Execution Crashed (getSelectedFiles):", err);
             toast.error("Apps Script Error: " + err.message);
           })
           .getSelectedFiles();
@@ -247,16 +310,17 @@ function executeRename(event) {
   };
 
   return (
-    <div className="max-w-6xl mx-auto p-6 space-y-8 font-sans bg-[#E4E3E0] min-h-screen text-[#141414]">
-      <header className="flex justify-between items-end border-b border-[#141414] pb-4">
-        <div>
-          <h1 className="text-4xl font-bold tracking-tighter uppercase">DriveRename AI</h1>
-          <p className="font-serif italic text-sm opacity-60">Logical File Organization Specialist</p>
-        </div>
-        <Badge variant="outline" className="border-[#141414] rounded-none px-4 py-1">v1.0.0</Badge>
-      </header>
+    <div className="w-full min-h-screen bg-[#E4E3E0] text-[#141414] font-sans">
+      <div className="max-w-6xl mx-auto p-6 space-y-8">
+        <header className="flex justify-between items-end border-b border-[#141414] pb-4">
+          <div>
+            <h1 className="text-4xl font-bold tracking-tighter uppercase">DriveRename AI</h1>
+            <p className="font-serif italic text-sm opacity-60">Logical File Organization Specialist</p>
+          </div>
+          <Badge variant="outline" className="border-[#141414] rounded-none px-4 py-1">v1.0.0</Badge>
+        </header>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Input Section */}
         <div className="lg:col-span-1 space-y-6">
           <Card className="rounded-none border-[#141414] bg-transparent shadow-none">
@@ -333,6 +397,20 @@ function executeRename(event) {
 
             <TabsContent value="suggestions" className="mt-6">
               <Card className="rounded-none border-[#141414] bg-transparent shadow-none overflow-hidden">
+                <div className="p-4 border-b border-[#141414] flex justify-between items-center bg-white/30">
+                  <div className="text-[10px] uppercase font-mono opacity-60">
+                    {selectedIds.size} of {suggestions.length} selected
+                  </div>
+                  <Button
+                    onClick={handleExecuteRenaming}
+                    disabled={renaming || selectedIds.size === 0}
+                    size="sm"
+                    className="rounded-none bg-[#141414] text-[#E4E3E0] hover:bg-[#141414]/90 h-8 text-[10px] uppercase font-mono"
+                  >
+                    {renaming ? <Loader2 className="mr-2 h-3 w-3 animate-spin" /> : <Check className="mr-2 h-3 w-3" />}
+                    Execute Renaming
+                  </Button>
+                </div>
                 <ScrollArea className="h-[500px]">
                   <Table>
                     <TableHeader className="bg-[#141414] text-[#E4E3E0]">
@@ -434,5 +512,6 @@ function executeRename(event) {
         <span>Powered by Gemini 3 Flash</span>
       </footer>
     </div>
+  </div>
   );
 }

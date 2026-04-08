@@ -7,7 +7,19 @@ function onHomepage(e) {
   return createRenameCard(e);
 }
 
+/**
+ * Triggered by the manifest when a user selects files in Drive.
+ * We must store the IDs here before launching the UI.
+ */
 function onItemsSelected(e) {
+  if (e && e.drive && e.drive.selectedItems) {
+    const selectedIds = e.drive.selectedItems.map(item => item.id);
+    
+    // Store IDs in user-specific cache so the React app can find them later
+    PropertiesService.getUserProperties().setProperty('LATEST_SELECTION', JSON.stringify(selectedIds));
+  }
+  
+  // Proceed to build your Card/Overlay as normal
   return createRenameCard(e);
 }
 
@@ -106,35 +118,29 @@ function showSidebar() {
 
 
 /**
- * Retrieves metadata for the files currently selected by the user in the Google Drive UI.
- * * @param {Object} [e] The event object provided by the Google Workspace Add-on trigger.
- * @param {Object} [e.drive] The Drive-specific event data.
- * @param {Array<Object>} [e.drive.selectedItems] An array of items selected by the user.
- * * @returns {Object} An object containing a success flag and either the file data or an error message.
- * @returns {boolean} return.success True if files were successfully retrieved.
- * @returns {Array<{fileId: string, currentName: string, mimeType: string}>} [return.files] The metadata of selected files.
- * @returns {string} [return.error] The error message if the operation failed.
+ * Retrieves metadata for the files. Called from React via google.script.run.
+ * No parameters needed — it reads from UserProperties.
  */
-function getSelectedFiles(e) {
+function getSelectedFiles() {
   try {
-    var items = [];
+    const storedSelection = PropertiesService.getUserProperties().getProperty('LATEST_SELECTION');
     
-    // Check if the event object contains the expected Drive selection data
-    if (e && e.drive && e.drive.selectedItems && e.drive.selectedItems.length > 0) {
-      items = e.drive.selectedItems;
-    } else {
+    if (!storedSelection) {
       return { 
         success: false, 
-        error: "No files selected. Please select one or more files in Google Drive to begin." 
+        error: "No files selected. Please select one or more files in Google Drive, then open the assistant." 
       };
     }
 
-    /** @type {Array<{fileId: string, currentName: string, mimeType: string}>} */
-    var fileData = items.map(function(item) {
+    const fileIds = JSON.parse(storedSelection);
+    
+    // Convert the IDs back into file metadata using DriveApp
+    const fileData = fileIds.map(function(id) {
+      const file = DriveApp.getFileById(id);
       return {
-        fileId: item.id,
-        currentName: item.title, // 'title' is the property used in Workspace Add-on event objects
-        mimeType: item.mimeType
+        fileId: id,
+        currentName: file.getName(),
+        mimeType: file.getMimeType()
       };
     });
 

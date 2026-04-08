@@ -65,6 +65,16 @@ export interface AppsScriptResponse {
 }
 
 /**
+ * Interface for the response from the renameFile function.
+ */
+export interface RenameResponse {
+  success: boolean;
+  fileId?: string;
+  newName?: string;
+  error?: string;
+}
+
+/**
  * Interface for the rename suggestions returned by the tool.
  */
 export interface RenameSuggestion {
