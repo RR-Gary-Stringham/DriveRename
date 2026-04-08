@@ -24,6 +24,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
 import { Loader2, Play, Code, FileJson, Copy, Check, RefreshCw } from "lucide-react";
 import { getRenameSuggestions, FileSuggestion } from "@/src/services/geminiService";
+import { AppsScriptResponse, DriveFile } from "@/src/lib/drive-service";
 
 export default function RenameLogicGenerator() {
   const [fileInput, setFileInput] = useState("");
@@ -31,7 +32,42 @@ export default function RenameLogicGenerator() {
   const [suggestions, setSuggestions] = useState<FileSuggestion[]>([]);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(false);
+  const [fetching, setFetching] = useState(false);
   const [copied, setCopied] = useState(false);
+
+  const fetchFiles = () => {
+    setFetching(true);
+    try {
+      // @ts-ignore - google is provided by the Apps Script environment
+      if (typeof google !== 'undefined' && google.script && google.script.run) {
+        // @ts-ignore
+        google.script.run
+          .withSuccessHandler((response: AppsScriptResponse) => {
+            setFetching(false);
+            if (response.success && response.files) {
+              const formattedFiles = response.files
+                .map(f => `${f.currentName}|${f.fileId}`)
+                .join("\n");
+              setFileInput(formattedFiles);
+              toast.success(`Fetched ${response.files.length} files from Drive`);
+            } else {
+              toast.error(response.error || "Failed to fetch files");
+            }
+          })
+          .withFailureHandler((err: Error) => {
+            setFetching(false);
+            toast.error("Apps Script Error: " + err.message);
+          })
+          .getSelectedFiles();
+      } else {
+        setFetching(false);
+        toast.info("Apps Script environment not detected. Using manual input.");
+      }
+    } catch (error) {
+      setFetching(false);
+      console.error("Fetch error:", error);
+    }
+  };
 
   const handleAnalyze = async () => {
     if (!fileInput.trim()) {
@@ -214,7 +250,19 @@ function executeRename(event) {
             </CardHeader>
             <CardContent className="pt-6 space-y-4">
               <div className="space-y-2">
-                <label className="text-[10px] uppercase font-mono opacity-50">File List</label>
+                <div className="flex justify-between items-center">
+                  <label className="text-[10px] uppercase font-mono opacity-50">File List</label>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={fetchFiles}
+                    disabled={fetching}
+                    className="h-6 text-[10px] uppercase font-mono border border-[#141414]/20 rounded-none hover:bg-[#141414] hover:text-[#E4E3E0]"
+                  >
+                    {fetching ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <RefreshCw className="h-3 w-3 mr-1" />}
+                    Fetch Selected
+                  </Button>
+                </div>
                 <Textarea
                   placeholder="Invoice_2023.pdf&#10;Report_Final_v2.docx|id-123&#10;IMG_001.jpg"
                   className="min-h-[200px] rounded-none border-[#141414] focus-visible:ring-0 bg-white/50"

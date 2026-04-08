@@ -74,6 +74,54 @@ function showSidebar() {
 
 
 /**
+ * Retrieves metadata for the files currently selected by the user in the Google Drive UI.
+ * * @param {Object} [e] The event object provided by the Google Workspace Add-on trigger.
+ * @param {Object} [e.drive] The Drive-specific event data.
+ * @param {Array<Object>} [e.drive.selectedItems] An array of items selected by the user.
+ * * @returns {Object} An object containing a success flag and either the file data or an error message.
+ * @returns {boolean} return.success True if files were successfully retrieved.
+ * @returns {Array<{fileId: string, currentName: string, mimeType: string}>} [return.files] The metadata of selected files.
+ * @returns {string} [return.error] The error message if the operation failed.
+ */
+function getSelectedFiles(e) {
+  try {
+    var items = [];
+    
+    // Check if the event object contains the expected Drive selection data
+    if (e && e.drive && e.drive.selectedItems && e.drive.selectedItems.length > 0) {
+      items = e.drive.selectedItems;
+    } else {
+      return { 
+        success: false, 
+        error: "No files selected. Please select one or more files in Google Drive to begin." 
+      };
+    }
+
+    /** @type {Array<{fileId: string, currentName: string, mimeType: string}>} */
+    var fileData = items.map(function(item) {
+      return {
+        fileId: item.id,
+        currentName: item.title, // 'title' is the property used in Workspace Add-on event objects
+        mimeType: item.mimeType
+      };
+    });
+
+    return { 
+      success: true, 
+      files: fileData 
+    };
+
+  } catch (err) {
+    console.error("Error in getSelectedFiles: " + err.toString());
+    return { 
+      success: false, 
+      error: "An internal error occurred: " + err.message 
+    };
+  }
+}
+
+
+/**
  * Server-side function to rename a file.
  * Called from the React frontend via google.script.run.
  * @param {string} fileId

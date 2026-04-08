@@ -52,6 +52,16 @@ export const proposeFileRenamesTool: FunctionDeclaration = {
 export interface DriveFile {
   fileId: string;
   currentName: string;
+  mimeType: string;
+}
+
+/**
+ * Interface for the response from Apps Script server-side functions.
+ */
+export interface AppsScriptResponse {
+  success: boolean;
+  files?: DriveFile[];
+  error?: string;
 }
 
 /**
