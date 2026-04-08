@@ -15,6 +15,22 @@
     "executeAs": "USER_ACCESSING",
     "access": "ANYONE"
   },
+    "addOns": {
+    "common": {
+      "name": "Gemini Drive Renamer",
+      "logoUrl": "https://www.gstatic.com/images/branding/product/1x/drive_48dp.png",
+      "useLocaleFromApp": true,
+      "homepageTrigger": {
+        "runFunction": "onHomepage",
+        "enabled": true
+      }
+    },
+    "drive": {
+      "onItemsSelectedTrigger": {
+        "runFunction": "onItemsSelected"
+      }
+    }
+  },
   "oauthScopes": [
     "https://www.googleapis.com/auth/drive.file",
     "https://www.googleapis.com/auth/script.container.ui",
