@@ -6,3 +6,9 @@ coverage/
 *.log
 .env*
 !.env.example
+
+
+# Clasp / Google Apps Script
+.clasp.json
+.clasptmp.json
+~/.clasprc.json
