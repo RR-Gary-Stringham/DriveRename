@@ -36,12 +36,12 @@
   },
   "oauthScopes": [
     "https://www.googleapis.com/auth/drive.file",
+    "https://www.googleapis.com/auth/drive",
     "https://www.googleapis.com/auth/userinfo.email",
     "https://www.googleapis.com/auth/drive.addons.metadata.readonly",
     "https://www.googleapis.com/auth/script.external_request",
     "https://www.googleapis.com/auth/drive.readonly",
-    "https://www.googleapis.com/auth/script.locale",
-    "https://www.googleapis.com/auth/drive.addons.metadata.readonly"
+    "https://www.googleapis.com/auth/script.locale"
   ],
   "webapp": {
     "executeAs": "USER_ACCESSING",

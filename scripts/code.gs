@@ -84,7 +84,8 @@ function createRenameCard(e) {
     .setText('<b>SYSTEM STATUS: READY</b><br><br>Select files in your Drive, then launch the overlay to begin AI analysis.'));
 
   // Use ScriptApp to get the URL dynamically so you don't have to hardcode it
-  const webAppUrl = ScriptApp.getService().getUrl(); 
+  //const webAppUrl = ScriptApp.getService().getUrl(); 
+  const webAppUrl = "https://script.google.com/macros/s/AKfycbwjUEFK_MA1su9_qIIy3yvIbPyNlHnjN3bp-2VniVo/dev";
 
   const button = CardService.newTextButton()
     .setText('OPEN AI ASSISTANT')
@@ -189,6 +190,12 @@ function renameFile(fileId, newName) {
     console.error('Rename failed for ID: ' + fileId, e);
     return { success: false, error: e.toString() };
   }
+}
+
+function testRename() {
+  var newName = "20231025_Invoice-1637E153-0001.pdf;"
+  var fileId = "1RAfUpq_bvTZBJA2jMTCkDsOxt9ODaqeu";
+  renameFile(fileId, newName);
 }
 
 
