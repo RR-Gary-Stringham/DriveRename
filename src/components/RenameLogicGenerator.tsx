@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Card,
   CardContent,
@@ -23,7 +23,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
 import { Loader2, Play, Code, FileJson, Copy, Check, RefreshCw } from "lucide-react";
-import { getRenameSuggestions, FileSuggestion } from "@/src/services/geminiService";
+import { getRenameSuggestions, FileSuggestion, initGemini } from "@/src/services/geminiService";
 import { AppsScriptResponse, DriveFile } from "@/src/lib/drive-service";
 
 export default function RenameLogicGenerator() {
@@ -34,6 +34,22 @@ export default function RenameLogicGenerator() {
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(false);
   const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    // Fetch API key from Apps Script if available
+    // @ts-ignore
+    if (typeof google !== 'undefined' && google.script && google.script.run) {
+      // @ts-ignore
+      google.script.run
+        .withSuccessHandler((key: string) => {
+          if (key) {
+            initGemini(key);
+            console.log("Gemini initialized with Apps Script key");
+          }
+        })
+        .getGeminiApiKey();
+    }
+  }, []);
 
   const fetchFiles = () => {
     setFetching(true);

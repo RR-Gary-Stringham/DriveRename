@@ -74,15 +74,23 @@ git clone \[https://github.com/RR-Gary-Stringham/DriveRename.git\](https://githu
 clasp login
 
 
-# Login to your Google account
-clasp login
-
-# Create the script project using the convenience script
+\# Create the script project using the convenience script
 `npm run clasp:create` or `pnpm run clasp:create`
 
 runs the command to create the script project (Select 'standalone')  
 clasp create \--title "Gemini Drive Renamer" \--type standalone \--rootDir .
 
+
+**Manual Recovery (If clasp clone fails):**
+
+If you encounter issues linking the project, manually create a .clasp.json file in the root directory:
+
+{  
+  "scriptId": "YOUR\_SCRIPT\_ID",  
+  "rootDir": "."  
+}
+
+##
 
 ## **Development & Deployment**
 
@@ -90,24 +98,42 @@ clasp create \--title "Gemini Drive Renamer" \--type standalone \--rootDir .
 
 To test the UI, components, and styling in your local browser (Note: Drive API calls will not work locally):
 
-pnpm run dev
+`npm run dev ` or `pnpm run dev `
 
 ### **Deploying to Google Drive**
 
 Google Apps Script requires all frontend code to be inlined. Use the custom build-and-push command:
 
-1. **Build & Push:**  
-   pnpm run deploy
+**1\. Set the API Key in the Cloud**
 
-   *This command runs pnpm run build:gs (which executes vite build \--mode gscript) to consolidate assets into dist/index.html, then executes clasp push.* 
+Because .env files are not pushed to Google, you must set your API key in the Apps Script Project Settings:
 
-2. **Test the Add-on:**  
-   * Open [script.google.com](https://script.google.com) and open your project.  
-   * Click **Deploy** \> **Test deployments**.  
-   * Select **Google Workspace Add-on** and install it for your Google Drive.  
-   * 
+* Open your project at script.google.com.  
+* Click **Project Settings** (gear icon).  
+* Scroll to **Script Properties** and add:  
+   
+   **Property:** GEMINI\_API\_KEY  
+   **Value:** (Your Gemini API Key)
+
+
+**2\. Build & Deploy**
+
+Google Apps Script requires all frontend code to be inlined.
+
+`npm run deploy ` or `pnpm run deploy `
+
+*This command runs pnpm run build:gs (which executes vite build \--mode gscript) to consolidate assets into dist/index.html, then executes clasp push.*
+
+
+**3\. Test the Add-on**
+
+* Open [script.google.com](https://script.google.com) and open your project.  
+* In the Apps Script Editor, click **Deploy** \> **Test deployments**.  
+* Select **Google Workspace Add-on** and install it for your Google Drive.  
+* Refresh Google Drive and look for the icon in the sidebar.
 
 ## 
+
 
 ## **PROJECT STRUCTURE**
 
@@ -131,6 +157,8 @@ The add-on requests the following OAuth scopes:
 * script.external\_request: To communicate with the Gemini API.
 
 ## 
+
+##
 
 ## **LICENSE**
 

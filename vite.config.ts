@@ -8,7 +8,7 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, '.', '');
   
   // Define standard plugins
-  const plugins = [react(), tailwindcss()];
+  const plugins: any[] = [react(), tailwindcss()];
 
   // Only add viteSingleFile if we are building specifically for Google Apps Script
   if (mode === 'gscript') {

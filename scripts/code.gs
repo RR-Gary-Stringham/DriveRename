@@ -11,6 +11,26 @@ function onItemsSelected(e) {
   return createRenameCard(e.drive.activeCursorItem);
 }
 
+/**
+ * Retrieves the Gemini API Key from Script Properties.
+ * @returns {string}
+ */
+function getGeminiApiKey() {
+  const key = PropertiesService.getScriptProperties().getProperty('GEMINI_API_KEY');
+  if (!key) {
+    console.error("GEMINI_API_KEY not found in Script Properties.");
+  }
+  return key;
+}
+
+const GEMINI_API_KEY = getGeminiApiKey();
+
+if (!GEMINI_API_KEY && typeof google === 'undefined') {
+  // Only throw if not in a context where it might be provided otherwise, 
+  // though in Apps Script this is the main way.
+  console.warn("GEMINI_API_KEY not found in Script Properties. Please add it in Settings.");
+}
+
 
 /**
  * CORE ADD-ON TRIGGERS
@@ -19,8 +39,9 @@ function onItemsSelected(e) {
 /**
  * Adds a custom menu to the Google Drive UI (if applicable) or Spreadsheet/Doc.
  * For a Drive Add-on, this is usually handled via the manifest.
+ * @param {Object} [e] The event object.
  */
-function onOpen() {
+function onOpen(e) {
   // Trigger scope request
   try {
     DriveApp.getFiles();
@@ -32,6 +53,7 @@ function onOpen() {
 
 /**
  * CardService UI for Drive context.
+ * @returns {GoogleAppsScript.Card_Service.Card}
  */
 function buildMainCard() {
   const card = CardService.newCardBuilder();
@@ -52,6 +74,7 @@ function buildMainCard() {
 /**
  * Shows the sidebar with the Vite-hosted React app.
  * This function is called when the user clicks the add-on icon.
+ * @returns {void|GoogleAppsScript.Card_Service.ActionResponse}
  */
 function showSidebar() {
   const html = HtmlService.createHtmlOutputFromFile('index')

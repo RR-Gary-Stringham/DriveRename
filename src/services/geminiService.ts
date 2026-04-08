@@ -1,7 +1,29 @@
 import { GoogleGenAI } from "@google/genai";
 import { proposeFileRenamesTool, RenameSuggestion } from "../lib/drive-service";
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
+let aiInstance: GoogleGenAI | null = null;
+
+/**
+ * Initializes or updates the Gemini AI instance with the provided API key.
+ * @param apiKey The Gemini API key.
+ */
+export function initGemini(apiKey: string) {
+  if (apiKey) {
+    aiInstance = new GoogleGenAI({ apiKey });
+  }
+}
+
+/**
+ * Gets the Gemini AI instance, initializing it with the environment variable if not already set.
+ * @returns The GoogleGenAI instance.
+ */
+function getAi() {
+  if (!aiInstance) {
+    const apiKey = process.env.GEMINI_API_KEY || "";
+    aiInstance = new GoogleGenAI({ apiKey });
+  }
+  return aiInstance;
+}
 
 export interface FileSuggestion {
   id: string;
@@ -16,6 +38,7 @@ export async function getRenameSuggestions(
 ): Promise<FileSuggestion[]> {
   if (files.length === 0) return [];
 
+  const ai = getAi();
   const prompt = `
     Analyze the following list of Google Drive files and suggest logical, clean, and professional new names based on this intent: "${intent}".
     
