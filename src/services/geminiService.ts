@@ -32,6 +32,34 @@ export interface FileSuggestion {
   reasoning: string;
 }
 
+/**
+ * Wraps an API call with automatic retries for 503 Overloaded errors.
+ */
+async function fetchWithRetry<T>(apiCallFn: () => Promise<T>, maxRetries = 3, initialDelayMs = 1000): Promise<T> {
+  let delay = initialDelayMs;
+
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      return await apiCallFn();
+    } catch (error: any) {
+      const errorMessage = error?.message || String(error);
+      if (errorMessage.includes("503") || errorMessage.includes("UNAVAILABLE") || errorMessage.includes("high demand")) {
+        console.warn(`Gemini API busy. Retrying in ${delay}ms... (Attempt ${attempt} of ${maxRetries})`);
+        
+        if (attempt === maxRetries) {
+          throw new Error("Gemini is currently overloaded. Please try again in a few minutes.");
+        }
+        
+        await new Promise(resolve => setTimeout(resolve, delay));
+        delay *= 2;
+      } else {
+        throw error;
+      }
+    }
+  }
+  throw new Error("Unexpected retry failure");
+}
+
 export async function getRenameSuggestions(
   files: { id: string; name: string }[],
   intent: string
@@ -50,13 +78,14 @@ export async function getRenameSuggestions(
 
   try {
     console.log("Calling Gemini with prompt:", prompt);
-    const response = await ai.models.generateContent({
+    
+    const response = await fetchWithRetry(() => ai.models.generateContent({
       model: "gemini-3-flash-preview",
       contents: prompt,
       config: {
         tools: [{ functionDeclarations: [proposeFileRenamesTool] }],
       },
-    });
+    }));
 
     console.log("Gemini raw response:", response);
 

@@ -183,9 +183,19 @@ export default function RenameLogicGenerator() {
       } else {
         toast.warning("Gemini returned no suggestions. Try a different intent.");
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Analyze error details:", error);
-      toast.error("Failed to generate suggestions. Check console for details.");
+      
+      const errorMessage = error?.message || String(error);
+      if (errorMessage.includes("API key not valid") || errorMessage.includes("API_KEY_INVALID")) {
+        toast.error("Invalid Gemini API Key. Please check your Script Properties in Google Apps Script.");
+      } else if (errorMessage.includes("quota") || errorMessage.includes("429")) {
+        toast.error("Gemini API quota exceeded. Please try again later.");
+      } else if (errorMessage.includes("503") || errorMessage.includes("UNAVAILABLE") || errorMessage.includes("high demand") || errorMessage.includes("overloaded")) {
+        toast.error("Gemini is currently busy (High Demand). Please wait a few seconds and try again.");
+      } else {
+        toast.error("Failed to generate suggestions. Check console for details.");
+      }
     } finally {
       setLoading(false);
     }
