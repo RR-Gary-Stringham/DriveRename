@@ -51,8 +51,16 @@ git clone \[https://github.com/RR-Gary-Stringham/DriveRename.git\](https://githu
 \# Login to your Google account  
 clasp login
 
-\# Create the script project (Select 'standalone')  
+
+# Login to your Google account
+clasp login
+
+# Create the script project using the convenience script
+`npm run clasp:create` or `pnpm run clasp:create`
+
+\# runs the command to create the script project (Select 'standalone')  
 clasp create \--title "Gemini Drive Renamer" \--type standalone \--rootDir .
+
 
 ## **Development & Deployment**
 
