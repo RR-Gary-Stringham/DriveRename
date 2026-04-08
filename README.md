@@ -28,6 +28,27 @@ View the app in AI Studio: https://ai.studio/apps/07a16992-c6f1-4408-b04d-a718cb
 
 ##
 
+## **ENVIRONMENT SETUP**
+
+Create a .env file in the root directory to store your configuration or copy the .env.example:
+
+Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
+
+<br>
+**Optional**
+ 
+Set APP_URL="MY_APP_URL"
+
+The URL where this applet is hosted. AI Studio automatically injects this at runtime with the Cloud Run service URL.This setting is not normally needed unless you need to link back to your script (for a webhook or a callback), the "URL" would be the Web App URL of your Google Apps Script.
+
+If you do, you can find this by:
+
+1. Going to script.google.com.
+2. Clicking Deploy > Manage Deployments.
+3. Copying the Web App URL (it usually ends in /exec).
+
+##
+
 ## RUN LOCALLY
 
 ### **Installation**
@@ -45,6 +66,7 @@ git clone \[https://github.com/RR-Gary-Stringham/DriveRename.git\](https://githu
 	
 4. Run the app:
    `npm run dev` or `pnpm run dev`
+
 
 ### **Connect to Google Apps Script**
 
