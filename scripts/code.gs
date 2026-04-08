@@ -73,23 +73,32 @@ function createRenameCard(e) {
   const card = CardService.newCardBuilder();
   card.setHeader(CardService.newCardHeader().setTitle('DriveRenamer'));
 
+    card.setHeader(CardService.newCardHeader()
+    .setTitle('DRIVERENAME AI')
+    .setSubtitle('Logical File Organization Specialist')
+    );
+
   const section = CardService.newCardSection();
   
+  section.addWidget(CardService.newTextParagraph()
+    .setText('<b>SYSTEM STATUS: READY</b><br><br>Select files in your Drive, then launch the overlay to begin AI analysis.'));
+
   // Use ScriptApp to get the URL dynamically so you don't have to hardcode it
   const webAppUrl = ScriptApp.getService().getUrl(); 
 
   const button = CardService.newTextButton()
-    .setText('Open AI Assistant')
+    .setText('OPEN AI ASSISTANT')
+    .setTextButtonStyle(CardService.TextButtonStyle.FILLED)
+    .setBackgroundColor('#1a1a1a') // Dark gray/almost black
     .setOpenLink(CardService.newOpenLink()
       .setUrl(webAppUrl)
-      .setOpenAs(CardService.OpenAs.OVERLAY) // Opens as a modal popup
+      .setOpenAs(CardService.OpenAs.OVERLAY)
       .setOnClose(CardService.OnClose.RELOAD_ADD_ON));
 
   section.addWidget(button);
   card.addSection(section);
   return card.build();
 }
-
 
 
 /**
