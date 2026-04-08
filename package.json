@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite --port=3000 --host=0.0.0.0",
     "build": "vite build",
-    "build:gscript": "vite build --mode gscript",
+    "build:gs": "vite build --mode gscript",
+    "deploy": "npm run build:gs && clasp push",
     "preview": "vite preview",
     "clean": "rm -rf dist",
     "lint": "tsc --noEmit"
