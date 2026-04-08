@@ -305,7 +305,6 @@ function include(filename) {
  *
  * @throws {Error} Throws if both PDF.gs and OCR extraction fail unexpectedly.
  */
- */
 async function extractPdfTextSmart(fileId, minTextLength = 50) {
   const file = DriveApp.getFileById(fileId);
   const blob = file.getBlob();
