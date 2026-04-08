@@ -6,8 +6,15 @@
     "enabledAdvancedServices": [
       {
         "userSymbol": "Drive",
-        "serviceId": "drive",
-        "version": "v3"
+        "version": "v3",
+        "serviceId": "drive"
+      }
+    ],
+    "libraries": [
+      {
+        "userSymbol": "PdfApp",
+        "version": "23",
+        "libraryId": "1wlEYkmDOSGb3Iuqd93a7cbQofcfwg5anjyvYmS3N4-nRAYHED8pVFaTY"
       }
     ]
   },
