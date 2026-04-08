@@ -61,7 +61,7 @@ async function fetchWithRetry<T>(apiCallFn: () => Promise<T>, maxRetries = 3, in
 }
 
 export async function getRenameSuggestions(
-  files: { id: string; name: string }[],
+  files: { id: string; name: string; content?: string }[],
   intent: string
 ): Promise<FileSuggestion[]> {
   if (files.length === 0) return [];
@@ -70,8 +70,10 @@ export async function getRenameSuggestions(
   const prompt = `
     Analyze the following list of Google Drive files and suggest logical, clean, and professional new names based on this intent: "${intent}".
     
+    For files where content is provided, use that information (like dates, invoice numbers, or project names found inside the document) to make more accurate suggestions.
+    
     Files:
-    ${files.map((f) => `- ID: ${f.id}, Name: ${f.name}`).join("\n")}
+    ${files.map((f) => `- ID: ${f.id}, Name: ${f.name}${f.content ? `\n  Content Snippet: ${f.content}` : ""}`).join("\n")}
     
     Use the 'proposeFileRenames' tool to provide your suggestions.
   `;

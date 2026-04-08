@@ -155,10 +155,14 @@ export default function RenameLogicGenerator() {
     setLoading(true);
     console.log("Starting analysis with intent:", intent);
     try {
-      let files: { id: string; name: string }[] = [];
+      let files: { id: string; name: string; content?: string }[] = [];
 
       if (selectedFiles.length > 0) {
-        files = selectedFiles.map(f => ({ id: f.fileId, name: f.currentName }));
+        files = selectedFiles.map(f => ({ 
+          id: f.fileId, 
+          name: f.currentName,
+          content: f.content 
+        }));
       } else {
         // Parse manual input: assume one file per line or comma-separated
         const lines = fileInput.split(/\n|,/).filter((l) => l.trim());

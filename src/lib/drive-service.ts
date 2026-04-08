@@ -53,6 +53,7 @@ export interface DriveFile {
   fileId: string;
   currentName: string;
   mimeType: string;
+  content?: string;
 }
 
 /**

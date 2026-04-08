@@ -128,10 +128,10 @@ function showSidebar() {
 
 
 /**
- * Retrieves metadata for the files. Called from React via google.script.run.
+ * Retrieves metadata and content for the files. Called from React via google.script.run.
  * No parameters needed — it reads from UserProperties.
  */
-function getSelectedFiles() {
+async function getSelectedFiles() {
   try {
     const storedSelection = PropertiesService.getUserProperties().getProperty('LATEST_SELECTION');
     
@@ -145,14 +145,37 @@ function getSelectedFiles() {
     const fileIds = JSON.parse(storedSelection);
     
     // Convert the IDs back into file metadata using DriveApp
-    const fileData = fileIds.map(function(id) {
+    const fileDataPromises = fileIds.map(async function(id) {
       const file = DriveApp.getFileById(id);
+      const mimeType = file.getMimeType();
+      let content = "";
+
+      if (mimeType === "application/pdf") {
+        try {
+          // Extract text from PDF
+          const extractedText = await extractPdfTextSmart(id);
+          if (extractedText) {
+            // Limit to 2000 characters to keep prompt size reasonable
+            content = extractedText.substring(0, 2000);
+            if (extractedText.length > 2000) {
+              content += "... [truncated]";
+            }
+          }
+        } catch (e) {
+          console.error("Failed to extract text for " + id + ": " + e.toString());
+          content = "[Error extracting text]";
+        }
+      }
+
       return {
         fileId: id,
         currentName: file.getName(),
-        mimeType: file.getMimeType()
+        mimeType: mimeType,
+        content: content
       };
     });
+
+    const fileData = await Promise.all(fileDataPromises);
 
     return { 
       success: true, 
