@@ -1,4 +1,6 @@
-# **GEMINI DRIVE RENAMER**
+# **DRIVE RENAMER (POWERED BY GEMINI)**
+
+Today's Gemini won't rename files in a Shared Drive, and in My Drive is limied to 20 files at a time. This app solves that.
 
 A Google Workspace Add-on for Google Drive that uses **Gemini 1.5 Flash** to analyze selected files and suggest professional, organized filenames. This tool features a "Review & Approve" workflow, ensuring no files are renamed without your explicit consent.
 
