@@ -11,11 +11,11 @@
   </picture>
 </p>
 
-<p align="right">DRIVE-RENAMER a project by REVREBEL</p>
+<p align="right">DRIVE-RENAME a project by REVREBEL</p>
 
 
 
-# **DRIVE-RENAMER (POWERED BY GEMINI)**
+# **DRIVE-RENAME (POWERED BY GEMINI)**
 
 Today's Gemini won't rename files in a Shared Drive, and in My Drive is limied to 20 files at a time. This app solves that.
 
