@@ -1,3 +1,20 @@
+<p align="left">
+  <picture>
+    <source
+      media="(prefers-color-scheme: dark)"
+      srcset=".github/assets/readme-banner_dark.jpg"
+    />
+    <img
+      src=".github/assets/readme-banner_light.jpg"
+      alt="__REPO__ repository banner"
+    />
+  </picture>
+</p>
+
+<p align="right">__REPO__ a project by __OWNER__</p>
+
+
+
 # **DRIVE RENAMER (POWERED BY GEMINI)**
 
 Today's Gemini won't rename files in a Shared Drive, and in My Drive is limied to 20 files at a time. This app solves that.
